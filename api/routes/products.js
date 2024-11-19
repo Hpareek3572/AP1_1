@@ -91,12 +91,28 @@ router.get('/:productId', (req, res, next)=> {
     });
 })
 
-router.patch('/:productId', (req, res, next)=> {
-    res.status(200).json({
-        message: 'Updated product'
-
-    })
-})
+// router.patch('/:productId', (req, res, next)=> {
+//     const id = req.params.productId;
+//     const updateOps = {};
+//     for(const ops of req.body){
+//         updateOps[ops.propName] = ops.value;
+//     }
+//   Product.updateOne({_id:id}, {$Set : updateOps})
+//   .exec() 
+//   .then(result =>{
+//     console.log(result);
+//     res.status(200).json({
+//         message: 'Product updated successfully',
+//         result: result
+//     });
+//   })
+//   .catch(err =>{
+//     console.log(err);
+//     res.status(500).json({
+//         error: err
+//     });
+//   })
+// })
 
 router.delete('/:productId', (req, res, next)=> {
     const id = req.params.productId;

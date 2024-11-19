@@ -45,7 +45,7 @@ router.get('/:orderId' , (req, res, next) => { // : is used to set dynamic route
 
     res.status(200).json({
         message: 'orders was fetched by id',
-        orderId: req.params.orderId
+    orderId: req.params.orderId
     });
 });
 
@@ -57,3 +57,75 @@ router.delete('/:orderId' , (req, res, next) => {
 });
 
 module.exports = router;
+
+
+// const express = require('express');
+// const router = express.Router();
+// const mongoose = require('mongoose');
+
+// const Order = require('../models/order');
+
+// // GET all orders
+// router.get('/', (req, res, next) => {
+//     Order.find()
+//         .select('_id quantity product')
+//         .exec()
+//         .then(orders => {
+//             res.status(200).json(orders);
+//         })
+//         .catch(err => {
+//             console.log(err);
+//             res.status(500).json({
+//                 error: err
+//             });
+//         });
+// });
+
+// // POST a new order
+// router.post('/', (req, res, next) => {
+//     const { quantity, productId } = req.body;
+
+//     // Validate that quantity and productId are provided
+//     if (!quantity || !productId) {
+//         return res.status(400).json({
+//             message: 'Quantity and productId are required'
+//         });
+//     }
+
+//     const order = new Order({
+//         _id: new mongoose.Types.ObjectId(),
+//         quantity: quantity,
+//         product: productId
+//     });
+
+//     order
+//         .save()
+//         .then(result => {
+//             console.log(result);
+//             res.status(201).json(result);
+//         })
+//         .catch(err => {
+//             console.log(err);
+//             res.status(500).json({
+//                 error: err
+//             });
+//         });
+// });
+
+// // GET an order by ID
+// router.get('/:orderId', (req, res, next) => {
+//     res.status(200).json({
+//         message: 'Order was fetched by ID',
+//         orderId: req.params.orderId
+//     });
+// });
+
+// // DELETE an order by ID
+// router.delete('/:orderId', (req, res, next) => {
+//     res.status(200).json({
+//         message: 'Order deleted successfully',
+//         orderId: req.params.orderId
+//     });
+// });
+
+// module.exports = router;
