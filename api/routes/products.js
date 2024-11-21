@@ -1,6 +1,23 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
+const multer = require('multer');
+
+
+// Multer middleware to handle file uploads
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'uploads/');
+    },
+    filename: function (req, file, cb) {
+        cb(null, 'uploads/');
+    },
+    filename: function (req, file, cb) {
+        cb(null , new Date().toISOString() + file.originalname);
+    }
+});
+
+const upload = multer({storage: storage})
 
 const Product = require('../models/product');
 const { json } = require('body-parser');
@@ -31,8 +48,19 @@ router.get('/',  (req, res , next)=> {
    of what it does: */
     .then(docs =>{
        const response = {
+        success: true,
         count : docs.length,
-        products: docs
+        products: docs.map(doc => {
+            return {
+                _id: doc._id,
+                name: doc.name,
+                price: doc.price,
+                request: {
+                    type: 'GET',
+                    url: `http://${req.get('host')}/products/${doc._id}`
+                }
+            }
+        })
        }
         res.status(200).json(response);
     })
@@ -43,76 +71,109 @@ router.get('/',  (req, res , next)=> {
     .catch (err =>{
         console.log(err);
         res.status(500).json({
-            error: err
+            success: false,
+            error: {
+                message: err.message || 'Internal server error',
+                status: 500
+            }
         });
     })
 })
 
-router.post('/',  (req, res , next)=> {
-
+router.post('/', upload.single('productImage'),  (req, res , next)=> {
+   
     const product = new Product({
         _id: new mongoose.Types.ObjectId(),
         name : req.body.name,
         price: req.body.price
     }) // we use Product as a constructor through this constructor we pass js object
   
-    product.save().then(result =>{
-        console.log(result);
-        res.status(201).json({
-            message: 'Handeling POST request to / products',
-            createdProduct: result
+    product.save()
+        .then(result =>{
+            console.log(result);
+            res.status(201).json({
+                success: true,
+                message: 'Product created successfully',
+                createdProduct: {
+                    _id: result._id,
+                    name: result.name,
+                    price: result.price,
+                    request: {
+                        type: 'GET',
+                        url: `http://${req.get('host')}/products/${result._id}`
+                    }
+                }
+            });
         })
-       })
-       .catch(err =>{ 
-        console.log(err)
-    res.status(500).json({
-        error: err
-    });});
+        .catch(err =>{ 
+            console.log(err);
+            res.status(500).json({
+                success: false,
+                error: {
+                    message: err.message || 'Failed to create product',
+                    status: 500
+                }
+            });
+        });
 })
 
 router.get('/:productId', (req, res, next)=> {
-   /* This code snippet is a route handler for a GET request to retrieve a specific product by its ID.
-   Here's a breakdown of what it does: */
     const id = req.params.productId;
-   Product.findById(id)
-   .exec()
-   .then(doc =>{
-    console.log("From database",doc);
-    res.status(200).json(doc);
-   })
-   /* The `.catch(err => { console.log(err); res.status(500).json({ error: err }); });` block in the
-   code snippet you provided is used to handle errors that may occur during the execution of
-   asynchronous operations, specifically when querying the database or saving data. */
-   .catch(err => {
+    
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({
+            message: 'Invalid product ID format'
+        });
+    }
+
+    Product.findById(id)
+        .exec()
+        .then(doc => {
+            if (doc) {
+                res.status(200).json({
+                    product: doc,
+                    request: {
+                        type: 'GET',
+                        url: `http://${req.get('host')}/products/${doc._id}`
+                    }
+                });
+            } else {
+                res.status(404).json({
+                    message: 'No valid entry found for provided ID'
+                });
+            }
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(500).json({
+                error: 'Internal server error',
+                details: err.message
+            });
+        });
+})
+
+router.patch('/:productId', (req, res, next)=> {
+    const id = req.params.productId;
+    const updateOps = {};
+    for(const ops of req.body){
+        updateOps[ops.propName] = ops.value;
+    }
+  Product.updateOne({_id:id}, {$set: updateOps})
+  .exec() 
+  .then(result =>{
+    console.log(result);
+    res.status(200).json({
+        message: 'Product updated successfully',
+        result: result
+    });
+  })
+  .catch(err =>{
     console.log(err);
     res.status(500).json({
         error: err
     });
-    });
+  })
 })
-
-// router.patch('/:productId', (req, res, next)=> {
-//     const id = req.params.productId;
-//     const updateOps = {};
-//     for(const ops of req.body){
-//         updateOps[ops.propName] = ops.value;
-//     }
-//   Product.updateOne({_id:id}, {$Set : updateOps})
-//   .exec() 
-//   .then(result =>{
-//     console.log(result);
-//     res.status(200).json({
-//         message: 'Product updated successfully',
-//         result: result
-//     });
-//   })
-//   .catch(err =>{
-//     console.log(err);
-//     res.status(500).json({
-//         error: err
-//     });
-//   })
-// })
 
 router.delete('/:productId', (req, res, next)=> {
     const id = req.params.productId;

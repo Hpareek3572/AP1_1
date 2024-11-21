@@ -3,6 +3,7 @@ const router = express.Router();
 const mongoose = require('mongoose');
 
 const Order = require('../models/order');
+const Product = require('../models/product');
 
 router.get('/' , (req, res, next) => {
    Order.find()
@@ -21,13 +22,22 @@ router.get('/' , (req, res, next) => {
 });
 
 router.post('/' , (req, res, next) => {
+//     Product.findById(req.body.productId)
+//    .then()
+//    .catch(err => {
+//     res.status(500).json({
+//         message: "Product not found",
+//         error: err
+//     })
+//    })
  const order = new Order({
     _id: new mongoose.Types.ObjectId(),
     quantity : req.body.quantity,
     product : req.body.productId
  });
- order
- .save()  //  The save method is already a promise, so you don't need to call .exec() on it.
+return order
+
+.save()  //  The save method is already a promise, so you don't need to call .exec() on it.
  .then( result =>{
     console.log(result);
     res.status(201).json(result);

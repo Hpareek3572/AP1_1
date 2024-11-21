@@ -27,18 +27,18 @@ app.use(bodyParser.json());
 // we use this code  to avoid cors errors from here 
 // cors errors are the security mechanism by brosewr enforsed by the prowser
 app.use((req, res, next) => {
-   /* `res.header('Access-Control-Allow-Origin', '*');` is setting the response header for
-   Access-Control-Allow-Origin in the HTTP response. This header is used to specify which origins
-   are allowed to access the resources of a server. */
-    res.header('Access-Control-Allow-Origin', '*'); // this alllow our api acces by other ports als
-   
-    res.header(
-        'Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization')
-        if(req.method === 'OPTIONS'){ // this tell browser what to send like put , post etc 
-            res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
-            return res.status(200).json({})
-        }
-        next();
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    
+    // Handle preflight requests
+    if(req.method === 'OPTIONS'){ 
+        return res.status(200).json({
+            success: true,
+            message: 'Preflight request successful'
+        });
+    }
+    next();
 })
 
 // till here we are managing cors errors
@@ -55,14 +55,23 @@ app.use((req, res , next)=>{
     next(error);
 })
 
-app.use((error , req, res , next)=>{
-    res.status(error.status || 500);
-    res.json({
+app.use((error, req, res, next) => {
+    const status = error.status || 500;
+    const message = error.message || 'Internal Server Error';
+    
+    // Log error for debugging
+    console.error(`[Error] ${status}: ${message}`);
+    if (error.stack) console.error(error.stack);
+    
+    res.status(status).json({
         error: {
-            message: error.message
+            status: status,
+            message: message,
+            path: req.path,
+            timestamp: new Date().toISOString()
         }
-    })
-})
+    });
+});
 
 
 
